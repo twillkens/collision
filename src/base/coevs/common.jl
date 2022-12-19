@@ -5,3 +5,7 @@ An aspect in the Basic framework is either a genotype or a phenotype
 function Dict{String, A}(coev::Coevolution) where {A <: Aspect}
     reduce(merge, [Dict{String, A}(pop) for pop in coev.pops])
 end
+
+function Dict{String, P}(coev::Coevolution) where {P <: Population}
+    Dict{String, P}([pop.key => pop for pop in coev.pops])
+end

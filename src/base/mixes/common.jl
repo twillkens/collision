@@ -17,15 +17,15 @@ Used for dispatching Mixes to processes for evaluation.
 Given the set of all Mixes of a Coevolution, divide them into `n` subsets where
 `n` is the number of processes.
 """
-function Set{Set{M}}(mixes::Set{M}, n_subsets::Int) where {M <: Mix}
-    n_mix = div(length(mixes), n_subsets)
-    mixvecs = collect(Iterators.partition(collect(mixes), n_mix))
+function Set{Set{Recipe}}(recipes::Set{<:Recipe}, n_subsets::Int)
+    n_mix = div(length(recipes), n_subsets)
+    recipe_vecs = collect(Iterators.partition(collect(recipes), n_mix))
     # If there are leftovers, divide the excess among the other subsets
-    if length(mixvecs) > n_subsets
-        excess = pop!(mixvecs)
+    if length(recipe_vecs) > n_subsets
+        excess = pop!(recipe_vecs)
         for i in eachindex(excess)
-            push!(mixvecs[i], excess[i])
+            push!(recipe_vecs[i], excess[i])
         end
     end
-    Set([Set{M}(mixvec) for mixvec in mixvecs])
+    Set([Set{Recipe}(rvec) for rvec in recipe_vecs])
 end

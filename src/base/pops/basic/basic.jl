@@ -1,24 +1,64 @@
-export BasicPop, KEY_SPLIT_TOKEN
+export GenoPop, KEY_SPLIT_TOKEN, GenoPopConfig
 
-KEY_SPLIT_TOKEN = "-"
+const KEY_SPLIT_TOKEN = "-"
 
-struct BasicPop{O <: Organism} <: Population{O}
+struct GenoPop <: Population
     key::String
-    orgs::Set{O}
-    stats::Set{Statistics}
-    BasicPop{O}(key, orgs) where {O <: Organism} = new{O}(key, orgs, Set())
+    curr_id::Int
+    genos::Set{Genotype}
 end
 
-function BasicPop{O}(key::String, n_orgs::Int, cfg::NamedTuple) where {O <: Organism}
-    orgs = Set{O}()
-    for i in 1:n_orgs
-        orgkey = join([key, i], KEY_SPLIT_TOKEN)  
-        org = O(orgkey, cfg)
-        push!(orgs, org)
-    end
-    BasicPop{O}(key, orgs)
+Base.@kwdef struct GenoPopConfig{C <: GenoConfig} <: PopConfig
+    key::String
+    n_genos::Int
+    geno_cfg::C
 end
 
-function BasicPop{O}(key::String, cfg::NamedTuple) where {O <: Organism}
-    BasicPop{O}(key, cfg.n_orgs, cfg)
+function(g::GenoPopConfig)()
+    genos = Set([g.geno_cfg(join([g.key, i], KEY_SPLIT_TOKEN)) for i in 1:g.n_genos])
+    GenoPop(g.key, g.n_genos + 1, genos)
+end
+
+
+# function GenoPop(popkey::String, n_genos::Int, geno_cfg::GenoConfig)
+#     genos = Set{Genotype}()
+#     for i in 1:n_genos
+#         genokey = join([popkey, i], KEY_SPLIT_TOKEN)  
+#         geno = geno_cfg(genokey)
+#         push!(genos, geno)
+#     end
+#     GenoPop(popkey, n_genos + 1, genos)
+# end
+
+# function GenoPop(cfg::GenoPopConfig)
+#     GenoPop(cfg.key, cfg.n_genos, cfg.geno_cfg)
+# end
+
+# function GenoPop{G}(key::String, n_orgs::Int, cfg::NamedTuple) where {G <: Genotype}
+#     genos = Set{G}()
+#     for i in 1:n_orgs
+#         genokey = join([key, i], KEY_SPLIT_TOKEN)  
+#         geno = G(genokey, cfg)
+#         push!(genos, geno)
+#     end
+#     GenoPop(key, genos)
+# end
+
+# function GenoPop(key::String, cfg::NamedTuple)
+#     GenoPop(key, cfg.n_orgs, cfg)
+# end
+
+"""
+Extracts a dictionary of String keys and Genotype values from a Population
+"""
+function Dict{String, Genotype}(pop::GenoPop)
+    Dict{String, Genotype}([geno.key => geno for geno in pop.genos])
+end
+
+function Dict{String, Genotype}(pops::Set{GenoPop})
+    merge([Dict{String, Genotype}(pop) for pop in pops]...)
+end
+
+function Dict{String, Population}(pops::Set{<:Population})
+    Dict{String, Population}([pop.key => pop for pop in pops])
 end
