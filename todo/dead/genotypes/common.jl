@@ -1,0 +1,3 @@
+"""
+Common code for genotypes
+"""

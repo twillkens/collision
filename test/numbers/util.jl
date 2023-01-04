@@ -13,12 +13,12 @@ function make_genocfg(::Type{RandomBitstringConfig}; width=10, rng=StableRNG(123
     RandomBitstringConfig(width=width, rng=rng)
 end
 
-function make_phenocfg(::Type{NGIntPhenoConfig}, popkey::String; kwargs...)
-    NGIntPhenoConfig(popkey)
+function make_phenocfg(::Type{IntPhenoConfig}, popkey::String; kwargs...)
+    IntPhenoConfig()
 end
 
-function make_phenocfg(::Type{NGVectorPhenoConfig}, popkey::String; subvector_width=10, kwargs...)
-    NGVectorPhenoConfig(popkey, subvector_width)
+function make_phenocfg(::Type{VectorPhenoConfig}, popkey::String; subvector_width=10, kwargs...)
+    VectorPhenoConfig(subvector_width=subvector_width)
 end
 
 function make_genotype(key::String, T::Type{<:GenoConfig}; kwargs...)
@@ -44,12 +44,13 @@ function make_testpop(;geno_cfg_T::Type{<:GenoConfig} = DefaultBitstringConfig,
     (pop_cfg)()
 end
 
+
 function make_allvsall_order(;subjects_popkey::String = "A",
                             tests_popkey::String = "B",
-                            subjects_phenocfg_T::Type{<:PhenoConfig} = NGIntPhenoConfig,
-                            tests_phenocfg_T::Type{<:PhenoConfig} = NGIntPhenoConfig,
+                            subjects_phenocfg_T::Type{<:PhenoConfig} = IntPhenoConfig,
+                            tests_phenocfg_T::Type{<:PhenoConfig} = IntPhenoConfig,
                             ng_domain_T::Type{<:NumbersGame} = NGGradient,
-                            outcome_T::Type{<:Outcome} = PairOutcome,
+                            outcome_T::Type{<:Outcome} = TestPairOutcome,
                             kwargs...)
 
     domain = ng_domain_T()
@@ -62,15 +63,16 @@ function make_sampler_order(;subjects_popkey::String = "A",
                             tests_popkey::String = "B",
                             rng::AbstractRNG = StableRNG(123),
                             n_samples=5,
-                            subjects_phenocfg_T::Type{<:PhenoConfig} = NGIntPhenoConfig,
-                            tests_phenocfg_T::Type{<:PhenoConfig} = NGIntPhenoConfig,
+                            subjects_phenocfg_T::Type{<:PhenoConfig} = IntPhenoConfig,
+                            tests_phenocfg_T::Type{<:PhenoConfig} = IntPhenoConfig,
                             ng_domain_T::Type{<:NumbersGame} = NGGradient,
-                            outcome_T::Type{<:Outcome} = PairOutcome,
+                            outcome_T::Type{<:Outcome} = TestPairOutcome,
                             kwargs...)
     domain = ng_domain_T()
+    
     subjects_phenocfg = make_phenocfg(subjects_phenocfg_T, subjects_popkey; kwargs...)
     tests_phenocfg = make_phenocfg(tests_phenocfg_T, tests_popkey; kwargs...)
-    SamplerOrder(domain, outcome_T, subjects_phenocfg, tests_phenocfg, rng, n_samples)
+    SamplerOrder(domain=domain, outcome=outcome_T, subjects_phenocfg, tests_phenocfg; kwargs...)
 end
 
 function default_job(;kwargs...)
@@ -96,13 +98,17 @@ end
 
 
 function default_coev(; rng=StableRNG(123), kwargs...)
-    popA = make_testpop(;rng=rng, key = "A", kwargs...)
-    popB = make_testpop(;rng=rng, key = "B", default_val = true, kwargs...)
+    geno_cfg = DefaultBitstringConfig()
+
+    popA = make_testpop(;rng=rng, key = "A", n_genos=25, kwargs...)
+    popB = make_testpop(;rng=rng, key = "B", n_genos=25, default_val = true, kwargs...)
 
     pops = Set([popA, popB])
     orderA = make_sampler_order(;rng=rng, subjects_popkey = "A", tests_popkey = "B", kwargs...)
     orderB = make_sampler_order(;rng=rng, subjects_popkey = "B", tests_popkey = "A", kwargs...)
     orders = Set([orderA, orderB])
+    selector = RouletteSelector(; key="A", rng=rng,)
+    selectors = Set()
 
 
 end

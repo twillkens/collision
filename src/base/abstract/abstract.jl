@@ -3,9 +3,9 @@ export Aspect, Phenotype, Genotype, Organism
 export Population, Domain, Recipe, Mix
 export Outcome, Statistics, Coevolution
 export Ingredient, Order, TypeWrapper, PairOrder
-export Job
+export Job, JobConfig
 export GenoConfig, PopConfig, OrderConfig, PhenoConfig
-export Selections, Reproducer, Record, Selector
+export Selections, Reproducer, Record, Selector, PairOutcome
 
 # top level
 abstract type Entity end
@@ -59,6 +59,7 @@ abstract type Job end
 
 abstract type Config end
 
+abstract type JobConfig <: Config end
 abstract type GenoConfig <: Config end
 abstract type PhenoConfig <: Config end
 abstract type PopConfig <: Config end
@@ -68,3 +69,5 @@ abstract type Record end
 
 abstract type Reproducer end
 abstract type Selections end
+abstract type Logger end
+abstract type PairOutcome <: Outcome end
