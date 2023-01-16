@@ -6,6 +6,10 @@ struct GenoPop <: Population
     genos::Set{Genotype}
 end
 
+function GenoPop(pop::GenoPop, ::Set{<:Outcome}, curr_id::Int, genos::Set{<:Genotype})
+    GenoPop(pop.key, curr_id, genos)
+end
+
 Base.@kwdef struct GenoPopConfig{C <: GenoConfig} <: PopConfig
     key::String
     n_genos::Int

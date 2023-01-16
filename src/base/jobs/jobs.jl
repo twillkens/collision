@@ -1,4 +1,31 @@
-export PairMix
+export PairMix, SetMix
+
+struct SetMix{D <: Domain, P <: Phenotype} <: Mix
+    n::Int
+    domain::D
+    outcome::Type{<:Outcome}
+    rolephenos::Dict{Symbol, P}
+end
+
+function(m::SetMix)()
+    m.outcome(m.n, m.domain; m.rolephenos...) 
+end
+
+function add_pheno!(entityrole::EntityRole,
+                    genodict::Dict{String, Genotype},
+                    phenodict::Dict{String, Phenotype},)
+    if entityrole.key ∉ keys(phenodict)
+        geno = genodict[entityrole.key]
+        pheno = (entityrole.phenocfg)(geno)
+        phenodict[entityrole.key] = pheno
+    end
+end
+
+function add_pheno!(recipe::MixRecipe,
+                    genodict::Dict{String, Genotype},
+                    phenodict::Dict{String, Phenotype},)
+    [add_pheno!(entityrole, genodict, phenodict) for entityrole in recipe.entityroles]
+end
 
 struct PairMix{D <: Domain, S <: Phenotype, T <: Phenotype} <: Mix
     n::Int

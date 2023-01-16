@@ -7,7 +7,7 @@ end
 
 struct SerialJobConfig <: JobConfig end
 
-function(cfg::SerialJobConfig)(orders::Set{<:Order}, pops::Set{GenoPop})
+function(cfg::SerialJobConfig)(orders::Set{<:Order}, pops::Set{<:Population})
     recipes = Set{Recipe}(orders, pops)
     genodict = Dict{String, Genotype}(pops)
     phenodict = Dict{String, Phenotype}(recipes, genodict)

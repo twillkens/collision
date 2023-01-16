@@ -1,3 +1,8 @@
+using Test
+using Random
+using StableRNGs
+include("../../src/Coevolutionary.jl")
+using .Coevolutionary
 include("util.jl")
 
 @testset "NumbersGame" begin
@@ -56,12 +61,18 @@ end
                          geno_cfg=DefaultBitstringConfig(width=10, default_val=false))()
     pops = Set([popA, popB])
     pheno_cfg = IntPhenoConfig()
-    order = SamplerOrder(domain=NGGradient(),
-                         outcome=TestPairOutcome,
-                         subjects_key="A", subjects_cfg=pheno_cfg,
-                         tests_key="B", tests_cfg=pheno_cfg,
-                         n_samples=5, rng=rng)
-    recipes = (order)(popA, popB)
+    order = SamplerMixOrder(
+        domain = NGGradient(),
+        outcome = ScalarOutcome,
+        poproles = Dict(
+            "A" => PopRole(role = :subject, phenocfg = IntPhenoConfig()),
+            "B" => PopRole(role = :test, phenocfg = IntPhenoConfig())
+        ),
+        subjects_key = "A",
+        tests_key = "B",
+        n_samples = 5,
+        rng = rng)
+    recipes = (order)(pops)
     @test length(recipes) == 50
     recipe_set = Set{Set{Recipe}}(order, pops, 5)
     @test all([length(recipes) == 10 for recipes in recipe_set])
@@ -74,13 +85,18 @@ end
     popB = GenoPopConfig(key="B", n_genos=10,
                          geno_cfg=DefaultBitstringConfig(width=10, default_val=false))()
     pops = Set([popA, popB])
-    pheno_cfg = IntPhenoConfig()
-    order = SamplerOrder(domain=NGGradient(),
-                         outcome=TestPairOutcome,
-                         subjects_key="A", subjects_cfg=pheno_cfg,
-                         tests_key="B", tests_cfg=pheno_cfg,
-                         n_samples=1, rng=rng)
-    recipes = (order)(popA, popB)
+    order = SamplerMixOrder(
+        domain = NGGradient(),
+        outcome = ScalarOutcome,
+        poproles = Dict(
+            "A" => PopRole(role = :subject, phenocfg = IntPhenoConfig()),
+            "B" => PopRole(role = :test, phenocfg = IntPhenoConfig())
+        ),
+        subjects_key = "A",
+        tests_key = "B",
+        n_samples = 1,
+        rng = rng)
+    recipes = (order)(pops)
     @test length(recipes) == 10
     recipe_set = Set{Set{Recipe}}(order, pops, 5)
     @test all([length(recipes) == 2 for recipes in recipe_set])
@@ -94,11 +110,13 @@ end
                             geno_cfg=DefaultBitstringConfig(width=10, default_val=false))()
     pops = Set([popA, popB])
     pheno_cfg = IntPhenoConfig()
-    order = AllvsAllOrder(domain=NGGradient(),
-                          outcome=TestPairOutcome,
-                          subjects_key="A", subjects_cfg=pheno_cfg,
-                          tests_key="B", tests_cfg=pheno_cfg,)
-    recipes = (order)(popA, popB)
+    order = AllvsAllMixOrder(
+        domain = NGGradient(),
+        outcome = ScalarOutcome,
+        poproles = Dict(
+            "A" => PopRole(role = :subject, phenocfg = IntPhenoConfig()),
+            "B" => PopRole(role = :test, phenocfg = IntPhenoConfig()),))
+    recipes = (order)(pops)
     @test length(recipes) == 100
 end
 
@@ -112,16 +130,28 @@ end
     popB = GenoPopConfig(key="B", n_genos=10, geno_cfg=geno_cfg)()
     pops = Set([popA, popB])
     pheno_cfg = IntPhenoConfig()
-    orderA = SamplerOrder(domain=NGGradient(),
-                          outcome=TestPairOutcome,
-                          subjects_key="A", subjects_cfg=pheno_cfg,
-                          tests_key="B", tests_cfg=pheno_cfg,
-                          n_samples=5, rng=rng)
-    orderB = SamplerOrder(domain=NGGradient(),
-                          outcome=TestPairOutcome,
-                          subjects_key="B", subjects_cfg=pheno_cfg,
-                          tests_key="A", tests_cfg=pheno_cfg,
-                          n_samples=5, rng=rng)
+    orderA = SamplerMixOrder(
+        domain = NGGradient(),
+        outcome = ScalarOutcome,
+        poproles = Dict(
+            "A" => PopRole(role = :subject, phenocfg = IntPhenoConfig()),
+            "B" => PopRole(role = :test, phenocfg = IntPhenoConfig())
+        ),
+        subjects_key = "A",
+        tests_key = "B",
+        n_samples = 5,
+        rng = rng)
+    orderB = SamplerMixOrder(
+        domain = NGGradient(),
+        outcome = ScalarOutcome,
+        poproles = Dict(
+            "B" => PopRole(role = :subject, phenocfg = IntPhenoConfig()),
+            "A" => PopRole(role = :test, phenocfg = IntPhenoConfig()),
+        ),
+        subjects_key = "B",
+        tests_key = "A",
+        n_samples = 5,
+        rng = rng)
     orders = Set([orderA, orderB])
     cfg = ParallelJobsConfig(n_jobs=5)
     jobs = cfg(orders, pops)
@@ -160,11 +190,17 @@ end
     geno_cfg = DefaultBitstringConfig(width=10, default_val=false)
     popB = GenoPopConfig(key="B", n_genos=10, geno_cfg=geno_cfg)()
     pops = Set([popA, popB])
-    orderA = SamplerOrder(domain=NGGradient(),
-                          outcome=TestPairOutcome,
-                          subjects_key="A", subjects_cfg=IntPhenoConfig(),
-                          tests_key="B", tests_cfg=IntPhenoConfig(),
-                          n_samples=5, rng=rng)
+    orderA = SamplerMixOrder(
+        domain = NGGradient(),
+        outcome = ScalarOutcome,
+        poproles = Dict(
+            "A" => PopRole(role = :subject, phenocfg = IntPhenoConfig()),
+            "B" => PopRole(role = :test, phenocfg = IntPhenoConfig())
+        ),
+        subjects_key = "A",
+        tests_key = "B",
+        n_samples = 5,
+        rng = rng)
     cfg = SerialJobConfig()
     job = cfg(Set([orderA]), pops)
     mixes = Set{Mix}(job)
@@ -180,14 +216,28 @@ end
     pops = Set([popA, popB])
     domain = NGGradient()
     pheno_cfg = IntPhenoConfig()
-    orderA = SamplerOrder(domain=domain, outcome=TestPairOutcome,
-                          subjects_key="A", subjects_cfg=pheno_cfg,
-                          tests_key="B", tests_cfg=pheno_cfg,
-                          n_samples=5, rng=rng)
-    orderB = SamplerOrder(domain=domain, outcome=TestPairOutcome,
-                          subjects_key="B", subjects_cfg=pheno_cfg,
-                          tests_key="A", tests_cfg=pheno_cfg,
-                          n_samples=5, rng=rng)
+    orderA = SamplerMixOrder(
+        domain = NGGradient(),
+        outcome = ScalarOutcome,
+        poproles = Dict(
+            "A" => PopRole(role = :subject, phenocfg = IntPhenoConfig()),
+            "B" => PopRole(role = :test, phenocfg = IntPhenoConfig())
+        ),
+        subjects_key = "A",
+        tests_key = "B",
+        n_samples = 5,
+        rng = rng)
+    orderB = SamplerMixOrder(
+        domain = NGGradient(),
+        outcome = ScalarOutcome,
+        poproles = Dict(
+            "B" => PopRole(role = :subject, phenocfg = IntPhenoConfig()),
+            "A" => PopRole(role = :test, phenocfg = IntPhenoConfig()),
+        ),
+        subjects_key = "B",
+        tests_key = "A",
+        n_samples = 5,
+        rng = rng)
     orders = Set([orderA, orderB])
     cfg = SerialJobConfig()
     job = cfg(orders, pops)
@@ -195,11 +245,17 @@ end
     @test length(outcomes) == 100
     flag = true
     for outcome in outcomes
-        if occursin("A", outcome.subject_key) && outcome.score == 0
-            flag = false
-        end
-        if occursin("B", outcome.subject_key) && outcome.score == 1
-            flag = false
+        for result in outcome.results
+            if occursin("A", result.key) &&
+                    result.role == :subject &&
+                    result.score == 0
+                flag = false
+            end
+            if occursin("B", result.key) &&
+                    result.role == :subject &&
+                    result.score == 1
+                flag = false
+            end
         end
     end
     @test flag
@@ -214,14 +270,36 @@ end
     pops = Set([popA, popB])
     domain = NGGradient()
     pheno_cfg = VectorPhenoConfig(subvector_width=10)
-    orderA = SamplerOrder(domain=domain, outcome=TestPairOutcome,
-                          subjects_key="A", subjects_cfg=pheno_cfg,
-                          tests_key="B", tests_cfg=pheno_cfg,
-                          n_samples=5, rng=rng)
-    orderB = SamplerOrder(domain=domain, outcome=TestPairOutcome,
-                          subjects_key="B", subjects_cfg=pheno_cfg,
-                          tests_key="A", tests_cfg=pheno_cfg,
-                          n_samples=5, rng=rng)
+    orderA = SamplerMixOrder(
+        domain = NGFocusing(),
+        outcome = ScalarOutcome,
+        poproles = Dict(
+            "A" => PopRole(
+                role = :subject,
+                phenocfg = VectorPhenoConfig(subvector_width=10)),
+            "B" => PopRole(
+                role = :test,
+                phenocfg = VectorPhenoConfig(subvector_width=10)),
+        ),
+        subjects_key = "A",
+        tests_key = "B",
+        n_samples = 5,
+        rng = rng)
+    orderB = SamplerMixOrder(
+        domain = NGFocusing(),
+        outcome = ScalarOutcome,
+        poproles = Dict(
+            "B" => PopRole(
+                role = :subject,
+                phenocfg = VectorPhenoConfig(subvector_width=10)),
+            "A" => PopRole(
+                role = :test,
+                phenocfg = VectorPhenoConfig(subvector_width=10)),
+        ),
+        subjects_key = "B",
+        tests_key = "A",
+        n_samples = 5,
+        rng = rng)
     orders = Set([orderA, orderB])
     cfg = SerialJobConfig()
     job = cfg(orders, pops)
@@ -229,11 +307,17 @@ end
     @test length(outcomes) == 100
     flag = true
     for outcome in outcomes
-        if occursin("A", outcome.subject_key) && outcome.score == 0
-            flag = false
-        end
-        if occursin("B", outcome.subject_key) && outcome.score == 1
-            flag = false
+        for result in outcome.results
+            if occursin("A", result.key) &&
+                    result.role == :subject &&
+                    result.score == 0
+                flag = false
+            end
+            if occursin("B", result.key) &&
+                    result.role == :subject &&
+                    result.score == 1
+                flag = false
+            end
         end
     end
     @test flag
@@ -243,29 +327,32 @@ end
     domain = NGGradient()
     a = IntPheno("a", 4)
     b = IntPheno("b", 5)
-    mix = PairMix(1, domain, TestPairOutcome, a, b)
+    rolephenos = Dict(:subject => a, :test => b)
+    mix = SetMix(1, domain, ScalarOutcome, rolephenos)
     o = (mix)()
-    @test o.subject_key == "a"
-    @test o.test_key == "b"
-    @test o.score == false
+    @test getscore("a", o) == false
 
     Sₐ = Set([IntPheno(string(x), x) for x in 1:3])
     Sᵦ = Set([IntPheno(string(x), x) for x in 6:8])
     
     fitness_a = 0
     for other ∈ Sₐ
-        mix = PairMix(1, domain, TestPairOutcome, a, other)
+        rolephenos = Dict(:subject => a, :test => other)
+        mix = SetMix(1, domain, ScalarOutcome, rolephenos)
+        #mix = PairMix(1, domain, TestPairOutcome, a, other)
         o = (mix)()
-        fitness_a += o.score
+        fitness_a += getscore("a", o)
     end
 
     @test fitness_a == 3
 
     fitness_b = 0
     for other ∈ Sᵦ
-        mix = PairMix(1, domain, TestPairOutcome, b, other)
+        rolephenos = Dict(:subject => b, :test => other)
+        mix = SetMix(1, domain, ScalarOutcome, rolephenos)
+        #mix = PairMix(1, domain, TestPairOutcome, b, other)
         o = (mix)()
-        fitness_b += o.score
+        fitness_b += getscore(:subject, o)
     end
 
     @test fitness_b == 0
@@ -277,23 +364,26 @@ end
     a = VectorPheno("a", [4, 16])
     b = VectorPheno("b", [5, 14])
 
-    mix = PairMix(1, domain, TestPairOutcome, a, b)
+    rolephenos = Dict(:subject => a, :test => b)
+    mix = SetMix(1, domain, ScalarOutcome, rolephenos)
+    #mix = PairMix(1, domain, TestPairOutcome, a, b)
     o = (mix)()
-    @test o.score == true
+    @test getscore(:subject, o) == true
 
     a = VectorPheno("a", [4, 16])
     b = VectorPheno("b", [5, 16])
-
-    mix = PairMix(1, domain, TestPairOutcome, a, b)
+    rolephenos = Dict(:subject => a, :test => b)
+    mix = SetMix(1, domain, ScalarOutcome, rolephenos)
+    #mix = PairMix(1, domain, TestPairOutcome, a, b)
     o = (mix)()
-    @test o.score == false
+    @test getscore(:subject, o) == false
 
     a = VectorPheno("a", [5, 16, 8])
     b = VectorPheno("b", [4, 16, 6])
-
-    mix = PairMix(1, domain, TestPairOutcome, a, b)
+    rolephenos = Dict(:subject => a, :test => b)
+    mix = SetMix(1, domain, ScalarOutcome, rolephenos)
     o = (mix)()
-    @test o.score == true
+    @test getscore(:subject, o) == true
 end
 
 @testset "NGRelativism" begin
@@ -303,17 +393,17 @@ end
     b = VectorPheno("b", [4, 5])
     c = VectorPheno("c", [2, 4])
 
-    mix = PairMix(1, domain, TestPairOutcome, a, b)
+    mix = SetMix(1, domain, ScalarOutcome, Dict(:subject => a, :test => b))
     o = (mix)()
-    @test o.score == true
+    @test getscore(:subject, o) == true
 
-    mix = PairMix(1, domain, TestPairOutcome, b, c)
+    mix = SetMix(1, domain, ScalarOutcome, Dict(:subject => b, :test => c))
     o = (mix)()
-    @test o.score == true
+    @test getscore(:subject, o) == true
 
-    mix = PairMix(1, domain, TestPairOutcome, c, a)
+    mix = SetMix(1, domain, ScalarOutcome, Dict(:subject => c, :test => a))
     o = (mix)()
-    @test o.score == true
+    @test getscore(:subject, o) == true
 end
 
 @testset "Roulette/Reproduce/Elitism" begin
@@ -324,10 +414,23 @@ end
     geno_cfg = DefaultBitstringConfig(width=10, default_val=false)
     popB = GenoPopConfig(key="B", n_genos=10, geno_cfg=geno_cfg)()
     pops = Set([popA, popB])
-    domain = NGGradient()
-    pheno_cfg = IntPhenoConfig()
-    orderA = SamplerOrder(domain=domain, outcome=TestPairOutcome, subjects_key="A", subjects_cfg=pheno_cfg,
-                          tests_key="B", tests_cfg=pheno_cfg, n_samples=5, rng=rng)
+    orderA = SamplerMixOrder(
+        domain = NGGradient(),
+        outcome = ScalarOutcome,
+        poproles = Dict(
+            "A" => PopRole(
+                role = :subject,
+                phenocfg = IntPhenoConfig()),
+            "B" => PopRole(
+                role = :test,
+                phenocfg = IntPhenoConfig()),
+        ),
+        subjects_key = "A",
+        tests_key = "B",
+        n_samples = 5,
+        rng = rng)
+    # orderA = SamplerOrder(domain=domain, outcome=TestPairOutcome, subjects_key="A", subjects_cfg=pheno_cfg,
+    #                       tests_key="B", tests_cfg=pheno_cfg, n_samples=5, rng=rng)
     orders = Set([orderA])
     cfg = SerialJobConfig()
     job = cfg(orders, pops)
@@ -336,7 +439,7 @@ end
     selections = (selector)(popA, outcomes)
     @test Set(selections.elites) == winners
     reproducer = BitstringReproducer(rng, 0.05)
-    newpop = (reproducer)("A", 11, selections)
+    newpop = (reproducer)(GenoPop, popA, outcomes, selections)
     @test length(newpop.genos) == 10
     flag = true
     genokeys = keys(Dict{String, Genotype}(newpop))
@@ -373,29 +476,59 @@ end
     ## Job ##
     job_cfg = SerialJobConfig()
 
+    orderA = SamplerMixOrder(
+        domain = NGGradient(),
+        outcome = ScalarOutcome,
+        poproles = Dict(
+            "A" => PopRole(
+                role = :subject,
+                phenocfg = IntPhenoConfig()),
+            "B" => PopRole(
+                role = :test,
+                phenocfg = IntPhenoConfig()),
+        ),
+        subjects_key = "A",
+        tests_key = "B",
+        n_samples = 15,
+        rng = rng)
+    orderB = SamplerMixOrder(
+        domain = NGGradient(),
+        outcome = ScalarOutcome,
+        poproles = Dict(
+            "A" => PopRole(
+                role = :test,
+                phenocfg = IntPhenoConfig()),
+            "B" => PopRole(
+                role = :subject,
+                phenocfg = IntPhenoConfig()),
+        ),
+        subjects_key = "B",
+        tests_key = "A",
+        n_samples = 15,
+        rng = rng)
     ## Orders ##
-    domain = NGGradient()
-    pheno_cfg = IntPhenoConfig()
-    orderA = SamplerOrder(
-        domain=domain, outcome=TestPairOutcome,
-        subjects_key="A", subjects_cfg=pheno_cfg,
-        tests_key="B", tests_cfg=pheno_cfg,
-        n_samples=15, rng=rng)
-    orderB = SamplerOrder(
-        domain=domain, outcome=TestPairOutcome,
-        subjects_key="B", subjects_cfg=pheno_cfg,
-        tests_key="A", tests_cfg=pheno_cfg,
-        n_samples=15, rng=rng)
+    # domain = NGGradient()
+    # pheno_cfg = IntPhenoConfig()
+    # orderA = SamplerOrder(
+    #     domain=domain, outcome=ScalarOutcome,
+    #     subjects_key="A", subjects_cfg=pheno_cfg,
+    #     tests_key="B", tests_cfg=pheno_cfg,
+    #     n_samples=15, rng=rng)
+    # orderB = SamplerOrder(
+    #     domain=domain, outcome=ScalarOutcome,
+    #     subjects_key="B", subjects_cfg=pheno_cfg,
+    #     tests_key="A", tests_cfg=pheno_cfg,
+    #     n_samples=15, rng=rng)
     orders = Set([orderA, orderB])
 
     ## Spawners ##
     mutrate = 0.05
     selectorA = RouletteSelector(rng=rng, n_elite=0, n_singles=n_genos, n_couples=0)
     reproducerA = BitstringReproducer(rng=rng, mutrate=mutrate)
-    spawnerA = Spawner("A", selectorA, reproducerA)
+    spawnerA = Spawner("A", selectorA, reproducerA, GenoPop)
     selectorB = RouletteSelector(rng=rng, n_elite=0, n_singles=n_genos, n_couples=0)
     reproducerB = BitstringReproducer(rng=rng, mutrate=mutrate)
-    spawnerB = Spawner("B", selectorB, reproducerB)
+    spawnerB = Spawner("B", selectorB, reproducerB, GenoPop)
     spawners = Set([spawnerA, spawnerB])
 
     ## Loggers ##

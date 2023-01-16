@@ -53,7 +53,6 @@ function CoevConfig(;
     CoevConfig(key, trial, rng, job_cfg, orders, spawners, loggers, jld2file)
 end
 
-
 function(c::CoevConfig)(gen::Int, pops::Set{<:Population})
     jobs = c.job_cfg(c.orders, pops)
     outcomes = Set{Outcome}(jobs)

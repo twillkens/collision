@@ -6,18 +6,18 @@ struct GenoSelections <: Selections
     couples::Vector{Tuple{Genotype, Genotype}}
 end
 
-function update_scorevec_dict!(key::String, score::Real,
-        scoredict::Dict{String, Vector{Float64}})
-    if key ∉ keys(scoredict)
-        scoredict[key] = Float64[score] 
-    else
-        push!(scoredict[key], score)
+function update_scorevec_dict!(outcome::ScalarOutcome, scoredict::Dict{String, Vector{Float64}})
+    for result in outcome.results
+        k, s = result.key, result.score
+        if s === nothing
+            continue
+        end
+        if k ∉ keys(scoredict)
+            scoredict[k] = Float64[s] 
+        else
+            push!(scoredict[k], s)
+        end
     end
-end
-
-function update_scorevec_dict!(outcome::TestPairOutcome,
-        scoredict::Dict{String, Vector{Float64}})
-    update_scorevec_dict!(outcome.subject_key, outcome.score, scoredict)
 end
 
 function Dict{String, Vector{Float64}}(outcomes::Set{<:Outcome})

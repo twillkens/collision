@@ -14,7 +14,7 @@ struct ParallelJob <: Job
     end
 end
 
-function Set{Recipe}(orders::Set{<:Order}, pops::Set{GenoPop})
+function Set{Recipe}(orders::Set{<:Order}, pops::Set{<:Population})
     union([(order)(pops) for order in orders]...)
 end
 
@@ -41,7 +41,7 @@ function Set{Set{Recipe}}(orders::Set{<:Order}, pops::Set{<:Population}, n_jobs:
     Set{Set{Recipe}}(recipes, n_jobs)
 end
 
-function(cfg::ParallelJobsConfig)(orders::Set{<:Order}, pops::Set{GenoPop})
+function(cfg::ParallelJobsConfig)(orders::Set{<:Order}, pops::Set{<:Population})
     recipe_sets = Set{Set{Recipe}}(orders, pops, cfg.n_jobs)
     genodict = Dict{String, Genotype}(pops)
     Set([ParallelJob(recipes, genodict) for recipes in recipe_sets])

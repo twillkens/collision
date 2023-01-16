@@ -23,28 +23,31 @@ function(r::Reproducer)(popkey::String, curr_id::Int,
     children, curr_id
 end
 
-function(r::Reproducer)(popkey::String, curr_id::Int, selections::GenoSelections)
+function(r::Reproducer)(poptype::Type{<:Population}, 
+        pop::Population, outcomes::Set{<:Outcome}, selections::GenoSelections)
     elites = selections.elites
-    children1, curr_id = (r)(popkey, curr_id, selections.singles)
-    children2, curr_id = (r)(popkey, curr_id, selections.couples)
+    children1, curr_id = (r)(pop.key, pop.curr_id, selections.singles)
+    children2, curr_id = (r)(pop.key, curr_id, selections.couples)
     nextgen = Set(union(elites, children1, children2))
-    GenoPop(popkey, curr_id, nextgen)
+    poptype(pop, outcomes, curr_id, nextgen)
 end
 
-function(r::Reproducer)(popkey::String, curr_id::Int, selections::Set{<:Selections})
-    Set([(r)(popkey, curr_id, selection) for selection in selections])
+function(r::Reproducer)(poptype::Type{<:Population}, 
+        pop::Population, outcomes::Set{<:Outcome}, selections::Set{<:Selections})
+    Set([(r)(poptype, pop, outcomes, selection) for selection in selections])
 end
 
 @Base.kwdef struct Spawner{S <: Selector, R <: Reproducer}
     key::String
     selector::S
     reproducer::R
+    poptype::Type{<:Population}
 end
 
 function(s::Spawner)(pops::Set{<:Population}, outcomes::Set{<:Outcome})
     pop = Dict{String, Population}(pops)[s.key]
     selections = s.selector(pop, outcomes)
-    s.reproducer(s.key, pop.curr_id, selections)
+    s.reproducer(s.poptype, pop, outcomes, selections)
 end
 
 

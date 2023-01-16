@@ -7,3 +7,4 @@ function Dict{String, Population}(pops::Set{<:Population})
 end
 
 include("geno.jl")
+include("pareto.jl")
